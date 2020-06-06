@@ -43,6 +43,8 @@ clap = "2.33"
 unicode-normalization-alignments = "0.1"
 unicode_categories = "0.1"
 indicatif = "0.14"
+fnv = "1.0.3"
+opencc-rust = "1.0.12"
 
 [dev-dependencies]
 criterion = "0.3"

@@ -78,6 +78,11 @@ impl NormalizedString {
     }
 
     /// Return the normalized string
+    pub fn set_normalized(&mut self,s: String) {
+        self.normalized = s;
+    }
+
+    /// Return the normalized string
     pub fn get(&self) -> &str {
         &self.normalized
     }

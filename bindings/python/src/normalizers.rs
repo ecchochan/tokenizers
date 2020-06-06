@@ -51,8 +51,11 @@ impl BertNormalizer {
     fn new(kwargs: Option<&PyDict>) -> PyResult<(Self, Normalizer)> {
         let mut clean_text = true;
         let mut handle_chinese_chars = true;
+        let mut separate_numbers = false;
         let mut strip_accents = true;
         let mut lowercase = true;
+        let mut special_chars: String = "".to_string();
+        let mut zh_norm = false;
 
         if let Some(kwargs) = kwargs {
             for (key, value) in kwargs {
@@ -60,8 +63,11 @@ impl BertNormalizer {
                 match key {
                     "clean_text" => clean_text = value.extract()?,
                     "handle_chinese_chars" => handle_chinese_chars = value.extract()?,
+                    "separate_numbers" => separate_numbers = value.extract()?,
                     "strip_accents" => strip_accents = value.extract()?,
                     "lowercase" => lowercase = value.extract()?,
+                    "special_chars" => special_chars = value.extract()?,
+                    "zh_norm" => zh_norm = value.extract()?,
                     _ => println!("Ignored unknown kwargs option {}", key),
                 }
             }
@@ -73,8 +79,11 @@ impl BertNormalizer {
                 normalizer: Container::Owned(Box::new(tk::normalizers::bert::BertNormalizer::new(
                     clean_text,
                     handle_chinese_chars,
+                    separate_numbers,
                     strip_accents,
                     lowercase,
+                    special_chars,
+                    zh_norm,
                 ))),
             },
         ))

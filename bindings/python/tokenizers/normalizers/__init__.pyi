@@ -18,8 +18,11 @@ class BertNormalizer(Normalizer):
         self,
         clean_text: Optional[bool] = True,
         handle_chinese_chars: Optional[bool] = True,
+        separate_numbers: Optional[bool] = False,
         strip_accents: Optional[bool] = True,
         lowercase: Optional[bool] = True,
+        special_chars: Optional[str] = "",
+        zh_norm: Optional[bool] = False,
     ) -> None:
         """ Instantiate a BertNormalizer with the given options.
 
@@ -31,11 +34,20 @@ class BertNormalizer(Normalizer):
             handle_chinese_chars: (`optional`) boolean:
                 Whether to handle chinese chars by putting spaces around them.
 
+            separate_numbers: (`optional`) boolean:
+                Whether to put spaces around numbers so they get split
+
             strip_accents: (`optional`) boolean:
                 Whether to strip all accents.
 
             lowercase: (`optional`) boolean:
                 Whether to lowercase.
+
+            special_chars: (`optional`) string:
+                Chars that spaces will be put around so they get split
+
+            zh_norm: (`optional`) boolean:
+                Chars that will be replaced by custom mapping
 
         Returns:
             Normalizer

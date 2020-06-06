@@ -14,7 +14,8 @@ class TestBertNormalizer:
     def test_strip_accents(self):
         tokenizer = Tokenizer(BPE())
         tokenizer.normalizer = BertNormalizer(
-            strip_accents=True, lowercase=False, handle_chinese_chars=False, clean_text=False
+            strip_accents=True, lowercase=False, handle_chinese_chars=False, 
+            separate_numbers=False, clean_text=False, zh_norm=False
         )
 
         output = tokenizer.normalize("Héllò")
@@ -23,16 +24,28 @@ class TestBertNormalizer:
     def test_handle_chinese_chars(self):
         tokenizer = Tokenizer(BPE())
         tokenizer.normalizer = BertNormalizer(
-            strip_accents=False, lowercase=False, handle_chinese_chars=True, clean_text=False
+            strip_accents=False, lowercase=False, handle_chinese_chars=True, 
+            separate_numbers=False, clean_text=False, zh_norm=False
         )
 
         output = tokenizer.normalize("你好")
         assert output == " 你  好 "
 
+    def test_handle_separate_numbers(self):
+        tokenizer = Tokenizer(BPE())
+        tokenizer.normalizer = BertNormalizer(
+            strip_accents=False, lowercase=False, handle_chinese_chars=True, 
+            separate_numbers=True, clean_text=False, zh_norm=False
+        )
+
+        output = tokenizer.normalize("你好123 is 123")
+        assert output == " 你  好  1  2  3  is  1  2  3 "
+
     def test_clean_text(self):
         tokenizer = Tokenizer(BPE())
         tokenizer.normalizer = BertNormalizer(
-            strip_accents=False, lowercase=False, handle_chinese_chars=False, clean_text=True
+            strip_accents=False, lowercase=False, handle_chinese_chars=False, 
+            separate_numbers=False, clean_text=True, zh_norm=False
         )
 
         output = tokenizer.normalize("\ufeffHello")
@@ -41,11 +54,34 @@ class TestBertNormalizer:
     def test_lowercase(self):
         tokenizer = Tokenizer(BPE())
         tokenizer.normalizer = BertNormalizer(
-            strip_accents=False, lowercase=True, handle_chinese_chars=False, clean_text=False
+            strip_accents=False, lowercase=True, handle_chinese_chars=False, 
+            separate_numbers=False, clean_text=False, zh_norm=False
         )
 
         output = tokenizer.normalize("Héllò")
         assert output == "héllò"
+
+    def test_special_chars(self):
+        tokenizer = Tokenizer(BPE())
+        tokenizer.normalizer = BertNormalizer(
+            strip_accents=False, lowercase=False, handle_chinese_chars=False, 
+            separate_numbers=False, clean_text=False, 
+            special_chars="$%", zh_norm=False
+        )
+
+        output = tokenizer.normalize("$100 and 0.5% $$ %%")
+        assert output == " $ 100 and 0.5 %   $  $   %  % ", output
+
+
+    def test_zh_norm(self):
+        tokenizer = Tokenizer(BPE())
+        tokenizer.normalizer = BertNormalizer(
+            strip_accents=False, lowercase=False, handle_chinese_chars=False, 
+            separate_numbers=False, clean_text=False, zh_norm=True
+        )
+
+        output = tokenizer.normalize("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \x00" )
+        assert output == "系列 聯系 << 聯繫  o氹 氹 席 榮 折  o能 <n>", output
 
 
 class TestSequence:
