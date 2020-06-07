@@ -327,3 +327,26 @@ impl<'de> Visitor<'de> for OpenCCVisitor {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic() {
+        let norm = BertNormalizer::new(
+            true,
+            true,
+            true,
+            true,
+            true,
+            "".to_string(),
+            true,
+        );
+        let mut input = NormalizedString::from("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \u{00}");
+        let _ = norm.normalize(&mut input).unwrap();
+        assert_eq!(
+            input.get(),
+            " 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折   o 能  <n>  "
+        );
+    }
+}
