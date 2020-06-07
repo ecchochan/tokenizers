@@ -24,12 +24,16 @@ declare_types! {
 ///   handleChineseChars?: bool = true,
 ///   stripAccents?: bool = true,
 ///   lowercase?: bool = true
+///   special_chars?: String = "".to_string()
+///   zh_norm?: bool = true
 /// })
 fn bert_normalizer(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
     let mut clean_text = true;
     let mut handle_chinese_chars = true;
     let mut strip_accents = true;
     let mut lowercase = true;
+    let mut special_chars = "".to_string();
+    let mut zh_norm = true;
 
     if let Some(options) = cx.argument_opt(0) {
         let options = options.downcast::<JsObject>().or_throw(&mut cx)?;
@@ -53,6 +57,16 @@ fn bert_normalizer(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
                 lowercase = l.downcast::<JsBoolean>().or_throw(&mut cx)?.value();
             }
         }
+        if let Ok(l) = options.get(&mut cx, "special_chars") {
+            if let Err(_) = l.downcast::<JsUndefined>() {
+                special_chars = l.downcast::<JsString>().or_throw(&mut cx)?.value();
+            }
+        }
+        if let Ok(l) = options.get(&mut cx, "zh_norm") {
+            if let Err(_) = l.downcast::<JsUndefined>() {
+                zh_norm = l.downcast::<JsBoolean>().or_throw(&mut cx)?.value();
+            }
+        }
     }
 
     let mut normalizer = JsNormalizer::new::<_, JsNormalizer, _>(&mut cx, vec![])?;
@@ -63,6 +77,8 @@ fn bert_normalizer(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
             handle_chinese_chars,
             strip_accents,
             lowercase,
+            special_chars,
+            zh_norm,
         ),
     ));
     Ok(normalizer)
