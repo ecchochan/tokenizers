@@ -180,6 +180,7 @@ impl Metaspace {
     fn new(kwargs: Option<&PyDict>) -> PyResult<(Self, PreTokenizer)> {
         let mut replacement = '▁';
         let mut add_prefix_space = true;
+        let mut no_consecutive_space = false;
 
         if let Some(kwargs) = kwargs {
             for (key, value) in kwargs {
@@ -192,6 +193,7 @@ impl Metaspace {
                         ))?;
                     }
                     "add_prefix_space" => add_prefix_space = value.extract()?,
+                    "no_consecutive_space" => no_consecutive_space = value.extract()?,
                     _ => println!("Ignored unknown kwarg option {}", key),
                 }
             }
@@ -203,6 +205,7 @@ impl Metaspace {
                 pretok: Container::Owned(Box::new(tk::pre_tokenizers::metaspace::Metaspace::new(
                     replacement,
                     add_prefix_space,
+                    no_consecutive_space
                 ))),
             },
         ))

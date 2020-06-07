@@ -48,6 +48,10 @@ class Metaspace(Decoder):
             add_prefix_space: boolean:
                 Whether to add a space to the first word if there isn't already one. This
                 lets us treat `hello` exactly like `say hello`.
+
+            no_consecutive_space: boolean:
+                Whether to ignore consecutive spaces
+                lets us treat `hello    world` exactly like `hello world`.
         """
         pass
 

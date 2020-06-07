@@ -108,10 +108,17 @@ fn metaspace(mut cx: FunctionContext) -> JsResult<JsPreTokenizer> {
         }
     }
 
+    let mut no_consecutive_space = false;
+    if let Some(args) = cx.argument_opt(2) {
+        if args.downcast::<JsUndefined>().is_err() {
+            no_consecutive_space = args.downcast::<JsBoolean>().or_throw(&mut cx)?.value() as bool;
+        }
+    }
+
     let mut pretok = JsPreTokenizer::new::<_, JsPreTokenizer, _>(&mut cx, vec![])?;
     let guard = cx.lock();
     pretok.borrow_mut(&guard).pretok.to_owned(Box::new(
-        tk::pre_tokenizers::metaspace::Metaspace::new(replacement, add_prefix_space),
+        tk::pre_tokenizers::metaspace::Metaspace::new(replacement, add_prefix_space, no_consecutive_space),
     ));
     Ok(pretok)
 }

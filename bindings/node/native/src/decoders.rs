@@ -77,6 +77,20 @@ fn metaspace(mut cx: FunctionContext) -> JsResult<JsDecoder> {
         }
     }
 
+    let mut no_consecutive_space = false;
+    if let Some(args) = cx.argument_opt(2) {
+        if args.downcast::<JsUndefined>().is_err() {
+            no_consecutive_space = args.downcast::<JsBoolean>().or_throw(&mut cx)?.value() as bool;
+        }
+    }
+
+    let mut no_consecutive_space = false;
+    if let Some(args) = cx.argument_opt(2) {
+        if args.downcast::<JsUndefined>().is_err() {
+            no_consecutive_space = args.downcast::<JsBoolean>().or_throw(&mut cx)?.value() as bool;
+        }
+    }
+
     let mut decoder = JsDecoder::new::<_, JsDecoder, _>(&mut cx, vec![])?;
     let guard = cx.lock();
     decoder
@@ -85,6 +99,7 @@ fn metaspace(mut cx: FunctionContext) -> JsResult<JsDecoder> {
         .to_owned(Box::new(tk::decoders::metaspace::Metaspace::new(
             replacement,
             add_prefix_space,
+            no_consecutive_space
         )));
     Ok(decoder)
 }
