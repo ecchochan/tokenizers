@@ -53,7 +53,7 @@ impl PreTokenizer for Metaspace {
             }
             offset += 1;
         });
-        if !word.is_empty() {
+        if !word.is_empty() && (!self.no_consecutive_space || !last_ws) {
             let offsets = (offset - word.len(), offset);
             words.push((word.drain(0..).collect::<String>(), offsets));
         }
@@ -121,6 +121,20 @@ mod tests {
     fn multiple_spaces_no_consecutive() {
         let pretok = Metaspace::new('▁', true, true);
         let mut input = NormalizedString::from("Hey   friend!");
+        let res = pretok.pre_tokenize(&mut input).unwrap();
+        assert_eq!(
+            &res,
+            &[
+                ("▁Hey".into(), (0, 4)),
+                ("▁friend!".into(), (6, 14)),
+            ]
+        );
+    }
+
+    #[test]
+    fn multiple_spaces_no_last_space() {
+        let pretok = Metaspace::new('▁', true, true);
+        let mut input = NormalizedString::from("Hey   friend!   ");
         let res = pretok.pre_tokenize(&mut input).unwrap();
         assert_eq!(
             &res,
