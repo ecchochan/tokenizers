@@ -19,6 +19,7 @@ class SentencePieceBPETokenizer(BaseTokenizer):
         unk_token: Union[str, AddedToken] = "<unk>",
         replacement: str = "▁",
         add_prefix_space: bool = True,
+        no_consecutive_space: bool = False,
         dropout: Optional[float] = None,
     ):
         if vocab_file is not None and merges_file is not None:
@@ -33,10 +34,10 @@ class SentencePieceBPETokenizer(BaseTokenizer):
 
         tokenizer.normalizer = NFKC()
         tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(
-            replacement=replacement, add_prefix_space=add_prefix_space
+            replacement=replacement, add_prefix_space=add_prefix_space, no_consecutive_space=no_consecutive_space
         )
         tokenizer.decoder = decoders.Metaspace(
-            replacement=replacement, add_prefix_space=add_prefix_space
+            replacement=replacement, add_prefix_space=add_prefix_space, no_consecutive_space=no_consecutive_space
         )
 
         parameters = {
