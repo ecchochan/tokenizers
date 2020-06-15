@@ -431,10 +431,30 @@ impl Tokenizer {
         self
     }
 
-    /// Set the padding strategy
+    /// Get the currently set truncation parameters
+    pub fn get_truncation(&self) -> Option<&TruncationParams> {
+        self.truncation.as_ref()
+    }
+
+    /// Get a mutable reference to the currently set truncation parameters
+    pub fn get_truncation_mut(&mut self) -> Option<&mut TruncationParams> {
+        self.truncation.as_mut()
+    }
+
+    /// Set the padding parameters
     pub fn with_padding(&mut self, padding: Option<PaddingParams>) -> &Self {
         self.padding = padding;
         self
+    }
+
+    /// Get the currently set padding parameters
+    pub fn get_padding(&self) -> Option<&PaddingParams> {
+        self.padding.as_ref()
+    }
+
+    /// Get a mutable reference to the currently set padding parameters
+    pub fn get_padding_mut(&mut self) -> Option<&mut PaddingParams> {
+        self.padding.as_mut()
     }
 
     /// Get the vocabulary
@@ -455,7 +475,7 @@ impl Tokenizer {
     pub fn get_vocab_size(&self, with_added_tokens: bool) -> usize {
         self.model.get_vocab_size()
             + if with_added_tokens {
-                self.added_tokens.len()
+                self.added_tokens_map.len()
             } else {
                 0
             }
@@ -866,6 +886,7 @@ impl Tokenizer {
             }
 
             let id = if let Some(id) = self.token_to_id(&token.content) {
+                ignored += 1;
                 id
             } else {
                 let new_id = (self.model.get_vocab_size() + self.added_tokens_map.len()) as u32;
