@@ -15,11 +15,11 @@ export interface TruncationOptions {
   stride?: number;
   /**
    * Strategy to use:
-   * - `longest_first` Iteratively reduce the inputs sequence until the input is under max_length
+   * - `TruncationStrategy.LongestFirst` Iteratively reduce the inputs sequence until the input is under max_length
    * starting from the longest one at each token (when there is a pair of input sequences).
-   * - `only_first` Only truncate the first sequence.
-   * - `only_second` Only truncate the second sequence.
-   * @default "longest_first"
+   * - `TruncationStrategy.OnlyFirst` Only truncate the first sequence.
+   * - `TruncationStrategy.OnlySecond` Only truncate the second sequence.
+   * @default TruncationStrategy.LongestFirst
    */
   strategy?: TruncationStrategy;
 }
@@ -38,7 +38,7 @@ export type PaddingConfiguration = Required<
 
 export interface PaddingOptions {
   /**
-   * @default "right"
+   * @default PaddingDirection.Right
    */
   direction?: PaddingDirection;
   /**
@@ -392,6 +392,14 @@ export interface AddedTokenOptions {
    * @default False
    */
   singleWord?: boolean;
+  /**
+   * Whether this token should match on the normalized version of the text. For example
+   * with the added token `yesterday` and a normalizer in charge of lowercasing the text,
+   * the input `I saw a lion Yesterday` would match the token.
+   * This is False for special tokens by default, true otherwise
+   * @default True
+   */
+  normalized?: boolean;
 }
 
 /**
@@ -404,9 +412,10 @@ export class AddedToken {
   /**
    * Instantiate a new AddedToken
    * @param content The content of the token
+   * @param special Whether this is a special token
    * @param [options] Options for the token
    */
-  constructor(content: string, options?: AddedTokenOptions);
+  constructor(content: string, special: boolean, options?: AddedTokenOptions);
 
   /**
    * Get the content of the AddedToken

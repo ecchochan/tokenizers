@@ -1,6 +1,7 @@
 extern crate tokenizers as tk;
 
 use crate::container::Container;
+use crate::extraction::*;
 use neon::prelude::*;
 
 /// Normalizer
@@ -19,68 +20,55 @@ declare_types! {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BertNormalizerOptions {
+    clean_text: bool,
+    handle_chinese_chars: bool,
+    strip_accents: bool,
+    lowercase: bool,
+    special_chars: String,
+    zh_norm: bool,
+}
+impl Default for BertNormalizerOptions {
+    fn default() -> Self {
+        Self {
+            clean_text: true,
+            handle_chinese_chars: true,
+            strip_accents: true,
+            lowercase: true,
+            special_chars: "".to_string(),
+            zh_norm: false,
+        }
+    }
+}
+
 /// bert_normalizer(options?: {
 ///   cleanText?: bool = true,
 ///   handleChineseChars?: bool = true,
 ///   stripAccents?: bool = true,
 ///   lowercase?: bool = true
 ///   special_chars?: String = "".to_string()
-///   zh_norm?: bool = true
+///   zh_norm?: bool = false
 /// })
 fn bert_normalizer(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
-    let mut clean_text = true;
-    let mut handle_chinese_chars = true;
-    let mut strip_accents = true;
-    let mut lowercase = true;
-    let mut special_chars = "".to_string();
-    let mut zh_norm = true;
-
-    if let Some(options) = cx.argument_opt(0) {
-        let options = options.downcast::<JsObject>().or_throw(&mut cx)?;
-        if let Ok(ct) = options.get(&mut cx, "cleanText") {
-            if let Err(_) = ct.downcast::<JsUndefined>() {
-                clean_text = ct.downcast::<JsBoolean>().or_throw(&mut cx)?.value();
-            }
-        }
-        if let Ok(hcc) = options.get(&mut cx, "handleChineseChars") {
-            if let Err(_) = hcc.downcast::<JsUndefined>() {
-                handle_chinese_chars = hcc.downcast::<JsBoolean>().or_throw(&mut cx)?.value();
-            }
-        }
-        if let Ok(sa) = options.get(&mut cx, "stripAccents") {
-            if let Err(_) = sa.downcast::<JsUndefined>() {
-                strip_accents = sa.downcast::<JsBoolean>().or_throw(&mut cx)?.value();
-            }
-        }
-        if let Ok(l) = options.get(&mut cx, "lowercase") {
-            if let Err(_) = l.downcast::<JsUndefined>() {
-                lowercase = l.downcast::<JsBoolean>().or_throw(&mut cx)?.value();
-            }
-        }
-        if let Ok(l) = options.get(&mut cx, "special_chars") {
-            if let Err(_) = l.downcast::<JsUndefined>() {
-                special_chars = l.downcast::<JsString>().or_throw(&mut cx)?.value();
-            }
-        }
-        if let Ok(l) = options.get(&mut cx, "zh_norm") {
-            if let Err(_) = l.downcast::<JsUndefined>() {
-                zh_norm = l.downcast::<JsBoolean>().or_throw(&mut cx)?.value();
-            }
-        }
-    }
+    let options = cx
+        .extract_opt::<BertNormalizerOptions>(0)?
+        .unwrap_or_else(BertNormalizerOptions::default);
 
     let mut normalizer = JsNormalizer::new::<_, JsNormalizer, _>(&mut cx, vec![])?;
     let guard = cx.lock();
-    normalizer.borrow_mut(&guard).normalizer.to_owned(Box::new(
-        tk::normalizers::bert::BertNormalizer::new(
-            clean_text,
-            handle_chinese_chars,
-            strip_accents,
-            lowercase,
-            special_chars,
-            zh_norm,
-        ),
-    ));
+    normalizer
+        .borrow_mut(&guard)
+        .normalizer
+        .make_owned(Box::new(tk::normalizers::bert::BertNormalizer::new(
+            options.clean_text,
+            options.handle_chinese_chars,
+            options.strip_accents,
+            options.lowercase,
+            options.special_chars,
+            options.zh_norm,
+        )));
     Ok(normalizer)
 }
 
@@ -91,7 +79,7 @@ fn nfd(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
     normalizer
         .borrow_mut(&guard)
         .normalizer
-        .to_owned(Box::new(tk::normalizers::unicode::NFD));
+        .make_owned(Box::new(tk::normalizers::unicode::NFD));
     Ok(normalizer)
 }
 
@@ -102,7 +90,7 @@ fn nfkd(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
     normalizer
         .borrow_mut(&guard)
         .normalizer
-        .to_owned(Box::new(tk::normalizers::unicode::NFKD));
+        .make_owned(Box::new(tk::normalizers::unicode::NFKD));
     Ok(normalizer)
 }
 
@@ -113,7 +101,7 @@ fn nfc(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
     normalizer
         .borrow_mut(&guard)
         .normalizer
-        .to_owned(Box::new(tk::normalizers::unicode::NFC));
+        .make_owned(Box::new(tk::normalizers::unicode::NFC));
     Ok(normalizer)
 }
 
@@ -124,35 +112,21 @@ fn nfkc(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
     normalizer
         .borrow_mut(&guard)
         .normalizer
-        .to_owned(Box::new(tk::normalizers::unicode::NFKC));
+        .make_owned(Box::new(tk::normalizers::unicode::NFKC));
     Ok(normalizer)
 }
 
 /// strip(left?: boolean, right?: boolean)
 fn strip(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
-    let mut left = true;
-    let mut right = true;
-
-    if let Some(left_arg) = cx.argument_opt(0) {
-        if left_arg.downcast::<JsUndefined>().is_err() {
-            left = left_arg.downcast_or_throw::<JsBoolean, _>(&mut cx)?.value();
-        }
-
-        if let Some(right_arg) = cx.argument_opt(1) {
-            if right_arg.downcast::<JsUndefined>().is_err() {
-                right = right_arg
-                    .downcast_or_throw::<JsBoolean, _>(&mut cx)?
-                    .value();
-            }
-        }
-    }
+    let left = cx.extract_opt::<bool>(0)?.unwrap_or(true);
+    let right = cx.extract_opt::<bool>(1)?.unwrap_or(true);
 
     let mut normalizer = JsNormalizer::new::<_, JsNormalizer, _>(&mut cx, vec![])?;
     let guard = cx.lock();
     normalizer
         .borrow_mut(&guard)
         .normalizer
-        .to_owned(Box::new(tk::normalizers::strip::Strip::new(left, right)));
+        .make_owned(Box::new(tk::normalizers::strip::Strip::new(left, right)));
 
     Ok(normalizer)
 }
@@ -163,19 +137,22 @@ fn sequence(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
         .argument::<JsArray>(0)?
         .to_vec(&mut cx)?
         .into_iter()
-        .map(|normalizer| {
-            match normalizer.downcast::<JsNormalizer>().or_throw(&mut cx) {
+        .map(
+            |normalizer| match normalizer.downcast::<JsNormalizer>().or_throw(&mut cx) {
                 Ok(normalizer) => {
-                     let guard = cx.lock();
-                     if !normalizer.borrow(&guard).normalizer.is_owned() {
-                         cx.throw_error("At least one of the normalizers is already being used in another Tokenizer")
-                     } else {
-                         Ok(normalizer)
-                     }
-                },
-                Err(e) => Err(e)
-            }
-        })
+                    let guard = cx.lock();
+                    if !normalizer.borrow(&guard).normalizer.is_owned() {
+                        cx.throw_error(
+                            "At least one of the normalizers is \
+                                        already being used in another Tokenizer",
+                        )
+                    } else {
+                        Ok(normalizer)
+                    }
+                }
+                Err(e) => Err(e),
+            },
+        )
         .collect::<NeonResult<Vec<_>>>()?;
 
     // We've checked that all the normalizers can be used, now we can convert them and attach
@@ -184,12 +161,8 @@ fn sequence(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
         .into_iter()
         .map(|mut normalizer| {
             let guard = cx.lock();
-            let n = normalizer
-                .borrow_mut(&guard)
-                .normalizer
-                .to_pointer()
-                .unwrap();
-            n
+            let mut n = normalizer.borrow_mut(&guard);
+            n.normalizer.make_pointer().unwrap()
         })
         .collect::<Vec<_>>();
 
@@ -198,7 +171,7 @@ fn sequence(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
     normalizer
         .borrow_mut(&guard)
         .normalizer
-        .to_owned(Box::new(tk::normalizers::utils::Sequence::new(normalizers)));
+        .make_owned(Box::new(tk::normalizers::utils::Sequence::new(normalizers)));
     Ok(normalizer)
 }
 
@@ -209,7 +182,7 @@ fn lowercase(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
     normalizer
         .borrow_mut(&guard)
         .normalizer
-        .to_owned(Box::new(tk::normalizers::utils::Lowercase));
+        .make_owned(Box::new(tk::normalizers::utils::Lowercase));
     Ok(normalizer)
 }
 
