@@ -19,7 +19,7 @@ class BertNormalizer(Normalizer):
         clean_text: Optional[bool] = True,
         handle_chinese_chars: Optional[bool] = True,
         separate_numbers: Optional[bool] = False,
-        strip_accents: Optional[bool] = True,
+        strip_accents: Optional[bool] = None,
         lowercase: Optional[bool] = True,
         special_chars: Optional[str] = "",
         zh_norm: Optional[bool] = False,
@@ -38,7 +38,8 @@ class BertNormalizer(Normalizer):
                 Whether to put spaces around numbers so they get split
 
             strip_accents: (`optional`) boolean:
-                Whether to strip all accents.
+                Whether to strip all accents. If this option is not specified (ie == None),
+                then it will be determined by the value for `lowercase` (as in the original Bert).
 
             lowercase: (`optional`) boolean:
                 Whether to lowercase.

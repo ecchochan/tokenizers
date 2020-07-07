@@ -52,7 +52,7 @@ impl BertNormalizer {
         let mut clean_text = true;
         let mut handle_chinese_chars = true;
         let mut separate_numbers = false;
-        let mut strip_accents = true;
+        let mut strip_accents = None;
         let mut lowercase = true;
         let mut special_chars: String = "".to_string();
         let mut zh_norm = false;

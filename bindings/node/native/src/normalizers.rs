@@ -25,7 +25,7 @@ declare_types! {
 struct BertNormalizerOptions {
     clean_text: bool,
     handle_chinese_chars: bool,
-    strip_accents: bool,
+    strip_accents: Option<bool>,
     lowercase: bool,
     special_chars: String,
     zh_norm: bool,
@@ -35,7 +35,7 @@ impl Default for BertNormalizerOptions {
         Self {
             clean_text: true,
             handle_chinese_chars: true,
-            strip_accents: true,
+            strip_accents: None,
             lowercase: true,
             special_chars: "".to_string(),
             zh_norm: false,

@@ -94,7 +94,7 @@ pub struct BertNormalizer {
     /// Whether to put spaces around numbers so they get split
     separate_numbers: bool,
     /// Whether to strip accents
-    strip_accents: bool,
+    strip_accents: Option<bool>,
     /// Whether to lowercase the input
     lowercase: bool,
     /// Whether to check to special chars
@@ -115,7 +115,7 @@ impl Default for BertNormalizer {
             clean_text: true,
             handle_chinese_chars: true,
             separate_numbers: false,
-            strip_accents: true,
+            strip_accents: None,
             lowercase: true,
             check_special_chars: false,
             special_char_mapping: FnvHashSet::default(),
@@ -131,7 +131,7 @@ impl BertNormalizer {
         clean_text: bool,
         handle_chinese_chars: bool,
         separate_numbers: bool,
-        strip_accents: bool,
+        strip_accents: Option<bool>,
         lowercase: bool,
         special_chars: String,
         zh_norm: bool,
@@ -280,7 +280,8 @@ impl Normalizer for BertNormalizer {
                                           self.zh_norm, 
                                           &self.zh_norm_mapping);
         }
-        if self.strip_accents {
+        let strip_accents = self.strip_accents.unwrap_or(self.lowercase);
+        if strip_accents {
             self.do_strip_accents(&mut normalized);
         }
         if self.lowercase {
