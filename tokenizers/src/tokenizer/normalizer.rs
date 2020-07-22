@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::ops::{Bound, RangeBounds};
 use unicode_normalization_alignments::UnicodeNormalization;
 
@@ -237,46 +236,30 @@ impl NormalizedString {
     /// We treat any value above `1` as `1`.
     pub fn transform<I: Iterator<Item = (char, isize)>>(&mut self, dest: I, initial_offset: usize) {
         let mut offset = -(initial_offset as isize);
-        let (ch, alignments): (Vec<_>, Vec<_>) = dest
+        let (normalized, alignments): (String, Vec<_>) = dest
             .enumerate()
             .map(|(index, (c, changes))| {
-                let uof = if offset < 0 {
-                    -offset as usize
-                } else {
-                    offset as usize
-                };
                 // A positive offset means we added characters. So we need to remove this offset
                 // from the current index to find out the previous id
-                let idx = if offset < 0 { index + uof } else { index - uof };
-                let align = match changes.cmp(&0) {
-                    // This is a newly inserted character, so we use the alignment from the
-                    // previous one
-                    Ordering::Greater => {
-                        offset += 1;
-                        if idx < 1 {
-                            Some((0, 0))
-                        } else {
-                            self.alignments.get(idx - 1).copied()
-                        }
+                let idx = (index as isize - offset) as usize;
+                offset += changes;
+                let align = if changes.is_positive() {
+                    if idx < 1 {
+                        (0, 0)
+                    } else {
+                        // This is a newly inserted character, so we use the alignment from the
+                        // previous one
+                        self.alignments[idx - 1]
                     }
-                    // No changes required here
-                    Ordering::Equal => self.alignments.get(idx).copied(),
-                    // Some characters where removed, nothing to change in alignments
-                    Ordering::Less => {
-                        offset += changes;
-                        self.alignments.get(idx).copied()
-                    }
+                } else {
+                    self.alignments[idx]
                 };
-
                 // Then we keep only the char for string reconstruction
-                (
-                    c,
-                    align.expect("Bad alignement in NormalizedString::transform"),
-                )
+                (c, align)
             })
             .unzip();
         self.alignments = alignments;
-        self.normalized = ch.iter().collect::<String>();
+        self.normalized = normalized;
     }
 
     /// Applies NFD normalization
@@ -304,18 +287,14 @@ impl NormalizedString {
     }
 
     /// Applies filtering over our characters
-    pub fn filter<F: Fn(&char) -> bool>(&mut self, filter: F) -> &mut Self {
-        let mut removed: usize = 0;
-        let mut filtered = self
+    pub fn filter<F: Fn(char) -> bool>(&mut self, keep: F) -> &mut Self {
+        let mut removed = 0;
+        let filtered = self
             .normalized
             .chars()
-            // We need to collect here to be able to reverse the iterator because Char is not ended
-            .collect::<Vec<_>>()
-            .into_iter()
             .rev()
             .map(|c| {
-                let keep = filter(&c);
-                if keep {
+                if keep(c) {
                     if removed > 0 {
                         let res = (c, -(removed as isize));
                         removed = 0;
@@ -329,19 +308,14 @@ impl NormalizedString {
                 }
             })
             .collect::<Vec<_>>();
-        // For some reason, if we use rev, and unwrap directly, some parts of the tuples we return
-        // above get mixed up... So we collect first, then reverse in place
-        filtered.reverse();
-        self.transform(
-            filtered.iter().filter(|o| o.is_some()).map(|o| o.unwrap()),
-            removed,
-        );
+        self.transform(filtered.into_iter().rev().filter_map(|o| o), removed);
         self
     }
 
     /// Prepend the given string to ourself
     pub fn prepend(&mut self, s: &str) -> &mut Self {
         self.normalized.insert_str(0, s);
+        #[allow(clippy::reversed_empty_ranges)]
         self.alignments.splice(0..0, s.chars().map(|_| (0, 0)));
         self
     }
@@ -399,35 +373,25 @@ impl NormalizedString {
         }
 
         // Split normalized
-        let byte_index = self
-            .normalized
-            .chars()
-            .enumerate()
-            .map(|(i, c)| if i < at { Some(c.len_utf8()) } else { None })
-            .fuse()
-            .filter(|c| c.is_some())
-            .map(|c| c.unwrap())
-            .sum::<usize>();
+        let byte_index = self.normalized.chars().enumerate().fold(0, |acc, (i, c)| {
+            if i < at {
+                acc + c.len_utf8()
+            } else {
+                acc
+            }
+        });
         let normalized = self.normalized.split_off(byte_index);
         let alignments = self.alignments.split_off(at);
 
         // Split original
         let original_at = self.alignments.last().map(|(_, end)| *end).unwrap_or(0);
-        let original_byte_index = self
-            .original
-            .chars()
-            .enumerate()
-            .map(|(i, c)| {
-                if i < original_at {
-                    Some(c.len_utf8())
-                } else {
-                    None
-                }
-            })
-            .fuse()
-            .filter(|c| c.is_some())
-            .map(|c| c.unwrap())
-            .sum::<usize>();
+        let original_byte_index = self.original.chars().enumerate().fold(0, |acc, (i, c)| {
+            if i < original_at {
+                acc + c.len_utf8()
+            } else {
+                acc
+            }
+        });
         let original = self.original.split_off(original_byte_index);
 
         NormalizedString {
@@ -486,7 +450,7 @@ impl NormalizedString {
                 .normalized
                 .chars()
                 .enumerate()
-                .map(|(i, c)| {
+                .filter_map(|(i, c)| {
                     if i < leading_spaces || i >= self.len() - trailing_spaces {
                         None
                     } else if i == self.len() - trailing_spaces - 1 {
@@ -495,8 +459,6 @@ impl NormalizedString {
                         Some((c, 0))
                     }
                 })
-                .filter(|o| o.is_some())
-                .map(|o| o.unwrap())
                 .collect::<Vec<_>>();
             self.transform(transformation.into_iter(), leading_spaces);
         }
@@ -552,6 +514,7 @@ pub fn get_range_of<T: RangeBounds<usize>>(s: &str, range: T) -> Option<&str> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::reversed_empty_ranges)]
     use super::*;
     use unicode_categories::UnicodeCategories;
 
@@ -588,7 +551,7 @@ mod tests {
     #[test]
     fn removed_chars() {
         let mut n = NormalizedString::from("élégant");
-        n.filter(|c| *c != 'n');
+        n.filter(|c| c != 'n');
         assert_eq!(
             &n.alignments,
             &[(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (6, 7)]
@@ -598,7 +561,7 @@ mod tests {
     #[test]
     fn mixed_addition_and_removal() {
         let mut n = NormalizedString::from("élégant");
-        n.nfd().filter(|c| !c.is_mark_nonspacing() && *c != 'n');
+        n.nfd().filter(|c| !c.is_mark_nonspacing() && c != 'n');
         assert_eq!(
             &n.alignments,
             &[(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (6, 7)]
@@ -626,7 +589,7 @@ mod tests {
     #[test]
     fn original_range() {
         let mut n = NormalizedString::from("Hello_______ World!");
-        n.filter(|c| *c != '_').lowercase();
+        n.filter(|c| c != '_').lowercase();
         let world_n = n.get_range(Range::Normalized(6..11)).unwrap();
         let world_o = n.get_range_original(Range::Normalized(6..11)).unwrap();
         assert_eq!(world_n, "world");

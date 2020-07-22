@@ -175,7 +175,7 @@ impl BertNormalizer {
 
     fn do_clean_text(&self, normalized: &mut NormalizedString) {
         normalized
-            .filter(|c| !(*c as usize == 0 || *c as usize == 0xfffd || is_control(*c)))
+            .filter(|c| !(c as usize == 0 || c as usize == 0xfffd || is_control(c)))
             .map(|c| if is_whitespace(c) { ' ' } else { c });
     }
 
@@ -248,7 +248,7 @@ impl BertNormalizer {
 #[typetag::serde]
 impl Normalizer for BertNormalizer {
     fn normalize(&self, mut normalized: &mut NormalizedString) -> _Result<()> {
-
+        
         //
         // Use OpenCC to normalize for Simplfied Chinese
         //
@@ -269,7 +269,7 @@ impl Normalizer for BertNormalizer {
             normalized.set_normalized(self.opencc.opencc.convert(normalized_str_arg));
         }
         if self.clean_text {
-            self.do_clean_text(&mut normalized);
+            self.do_clean_text(normalized);
         }
         if self.handle_chinese_chars || self.separate_numbers || self.check_special_chars || self.zh_norm {
             self.do_handle_separate_chars(&mut normalized, 
@@ -282,10 +282,10 @@ impl Normalizer for BertNormalizer {
         }
         let strip_accents = self.strip_accents.unwrap_or(self.lowercase);
         if strip_accents {
-            self.do_strip_accents(&mut normalized);
+            self.do_strip_accents(normalized);
         }
         if self.lowercase {
-            self.do_lowercase(&mut normalized);
+            self.do_lowercase(normalized);
         }
 
         Ok(())
@@ -338,7 +338,7 @@ mod tests {
             true,
             true,
             true,
-            true,
+            Some(true),
             true,
             "".to_string(),
             true,
