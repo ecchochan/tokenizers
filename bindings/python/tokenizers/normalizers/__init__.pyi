@@ -22,6 +22,7 @@ class BertNormalizer(Normalizer):
         strip_accents: Optional[bool] = None,
         lowercase: Optional[bool] = True,
         special_chars: Optional[str] = "",
+        opencc_config: Optional[str] = "s2t",
         zh_norm: Optional[bool] = False,
     ) -> None:
         """ Instantiate a BertNormalizer with the given options.

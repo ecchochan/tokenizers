@@ -17,13 +17,34 @@ use opencc_rust::{OpenCC,DefaultConfig};
 //   TODO :: Make config customizable
 //
 pub struct _OpenCC {
-    opencc: OpenCC
+    opencc: OpenCC,
+    config_name: String
 }
 impl _OpenCC {
-    pub fn new() -> Self {
-        let opencc = OpenCC::new(DefaultConfig::S2HK).unwrap();
+    pub fn new(config_name: String) -> Self {
+        let config: DefaultConfig;
+        match config_name.as_str() {
+            "s2t" | "S2T" => config = DefaultConfig::S2T,
+            "t2s" | "T2S" => config = DefaultConfig::T2S,
+            
+            "s2tw" | "S2TW" => config = DefaultConfig::S2TW,
+            "tw2s" | "TS2S" => config = DefaultConfig::TW2S,
+
+            "s2hk" | "S2HK" => config = DefaultConfig::S2HK,
+            "hk2s" | "HK2S" => config = DefaultConfig::HK2S,
+
+            "s2twp" | "S2TWP" => config = DefaultConfig::S2TWP,
+            "tw2sp" | "TW2SP" => config = DefaultConfig::TW2SP,
+
+            "t2tw" | "t2TW" => config = DefaultConfig::T2TW,
+            "t2hk" | "T2HK" => config = DefaultConfig::T2HK,
+
+            _ => panic!("config_name must be specified"),
+        }
+        let opencc = OpenCC::new(config).unwrap();
         _OpenCC {
-            opencc
+            opencc,
+            config_name
         }
     }
 }
@@ -121,7 +142,7 @@ impl Default for BertNormalizer {
             special_char_mapping: FnvHashSet::default(),
             zh_norm: false,
             zh_norm_mapping: FnvHashMap::default(),
-            opencc: _OpenCC::new()
+            opencc: _OpenCC::new(String::from("s2t"))
         }
     }
 }
@@ -134,6 +155,7 @@ impl BertNormalizer {
         strip_accents: Option<bool>,
         lowercase: bool,
         special_chars: String,
+        opencc_config: String,
         zh_norm: bool,
     ) -> Self {
         let mut special_char_mapping: FnvHashSet<char> = FnvHashSet::default();
@@ -156,7 +178,7 @@ impl BertNormalizer {
         
         }
 
-        let opencc = _OpenCC::new();
+        let opencc = _OpenCC::new(opencc_config);
 
 
         BertNormalizer {
@@ -298,7 +320,8 @@ impl Serialize for _OpenCC {
     where
         S: Serializer,
     {
-        let model = serializer.serialize_struct("OpenCC", 2)?;
+        let mut model = serializer.serialize_struct("_OpenCC", 1)?;
+        model.serialize_field("config_name", &self.config_name)?;
         model.end()
     }
 }
@@ -308,7 +331,9 @@ impl<'de> Deserialize<'de> for _OpenCC {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_struct("OpenCC", &[], OpenCCVisitor)
+        deserializer.deserialize_struct("_OpenCC", &[
+            "config_name",
+        ], OpenCCVisitor)
     }
 }
 
@@ -320,11 +345,20 @@ impl<'de> Visitor<'de> for OpenCCVisitor {
         write!(fmt, "struct OpenCC")
     }
 
-    fn visit_map<V>(self, mut _map: V) -> std::result::Result<Self::Value, V::Error>
+    fn visit_map<V>(self, mut map: V) -> std::result::Result<Self::Value, V::Error>
     where
         V: MapAccess<'de>,
     {
-        Ok(_OpenCC::new())
+        let mut config_name: String = String::from("s2t");
+        while let Some(key) = map.next_key::<String>()? {
+            match key.as_ref() {
+                "config_name" => config_name = map.next_value()?,
+                _ => {}
+            }
+        }
+        
+        let opencc = _OpenCC::new(config_name);
+        Ok(opencc)
     }
 }
 
@@ -341,6 +375,7 @@ mod tests {
             Some(true),
             true,
             "".to_string(),
+            "s2t".to_string(),
             true,
         );
         let mut input = NormalizedString::from("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \u{00}");

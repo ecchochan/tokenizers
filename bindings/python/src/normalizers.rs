@@ -55,6 +55,7 @@ impl BertNormalizer {
         let mut strip_accents = None;
         let mut lowercase = true;
         let mut special_chars: String = "".to_string();
+        let mut opencc_config: String = "s2t".to_string();
         let mut zh_norm = false;
 
         if let Some(kwargs) = kwargs {
@@ -67,6 +68,7 @@ impl BertNormalizer {
                     "strip_accents" => strip_accents = value.extract()?,
                     "lowercase" => lowercase = value.extract()?,
                     "special_chars" => special_chars = value.extract()?,
+                    "opencc_config" => opencc_config = value.extract()?,
                     "zh_norm" => zh_norm = value.extract()?,
                     _ => println!("Ignored unknown kwargs option {}", key),
                 }
@@ -83,6 +85,7 @@ impl BertNormalizer {
                     strip_accents,
                     lowercase,
                     special_chars,
+                    opencc_config,
                     zh_norm,
                 ))),
             },
