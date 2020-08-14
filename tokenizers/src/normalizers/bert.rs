@@ -12,14 +12,24 @@ use fnv::FnvHashMap;
 use opencc_rust::{OpenCC,DefaultConfig};
 
 
-/// A wrapper for OpenCC such that it is serializable
-//
-//   TODO :: Make config customizable
-//
 pub struct _OpenCC {
     opencc: OpenCC,
     config_name: String
 }
+
+impl Clone for _OpenCC {
+    fn clone(&self) -> Self {
+        _OpenCC::new(self.config_name.clone())
+    }
+}
+
+impl std::fmt::Debug for _OpenCC {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "_OpenCC({:?})", self.config_name)
+    }
+}
+
+
 impl _OpenCC {
     pub fn new(config_name: String) -> Self {
         let config: DefaultConfig;
@@ -104,7 +114,8 @@ fn is_number(c: char) -> bool {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(tag = "type")]
 pub struct BertNormalizer {
     /// Whether to do the bert basic cleaning:
     ///   1. Remove any control characters
@@ -267,7 +278,6 @@ impl BertNormalizer {
     }
 }
 
-#[typetag::serde]
 impl Normalizer for BertNormalizer {
     fn normalize(&self, mut normalized: &mut NormalizedString) -> _Result<()> {
         
@@ -378,11 +388,11 @@ mod tests {
             "s2t".to_string(),
             true,
         );
-        let mut input = NormalizedString::from("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \u{00}");
+        let mut input = NormalizedString::from("ам系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \u{00}");
         let _ = norm.normalize(&mut input).unwrap();
         assert_eq!(
             input.get(),
-            " 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折   o 能  <n>  "
+            "am 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折   o 能  <n>  "
         );
     }
 }
