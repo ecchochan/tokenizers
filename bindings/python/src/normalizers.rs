@@ -122,28 +122,9 @@ impl PyBertNormalizer {
                 }
             }
         }
-<<<<<<< HEAD
-
-        Ok((
-            BertNormalizer {},
-            Normalizer {
-                normalizer: Container::Owned(Box::new(tk::normalizers::bert::BertNormalizer::new(
-                    clean_text,
-                    handle_chinese_chars,
-                    separate_numbers,
-                    strip_accents,
-                    lowercase,
-                    special_chars,
-                    opencc_config,
-                    zh_norm,
-                ))),
-            },
-        ))
-=======
         let normalizer =
-            BertNormalizer::new(clean_text, handle_chinese_chars, strip_accents, lowercase);
+            BertNormalizer::new(clean_text, handle_chinese_chars, separate_numbers, strip_accents, lowercase, special_chars, opencc_config, zh_norm,);
         Ok((PyBertNormalizer {}, normalizer.into()))
->>>>>>> upstream/master
     }
 }
 
