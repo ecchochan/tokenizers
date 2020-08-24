@@ -73,8 +73,8 @@ class TestBertNormalizer:
             separate_numbers=False, clean_text=False, zh_norm=True
         )
 
-        output = normalizer.normalize_str("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \x00" )
-        assert output == "系列 聯系 << 聯繫  o氹 氹 席 榮 折  o能 <n>  ", output
+        output = normalizer.normalize_str(" 系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \x00" )
+        assert output == " 系列 聯系 << 聯繫  o氹 氹 席 榮 折木  o能 <n>  ", output
 
 
 class TestSequence:
