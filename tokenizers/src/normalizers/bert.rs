@@ -180,7 +180,7 @@ impl BertNormalizer {
         }
 
         if zh_norm {
-            for line in include_str!("zh_char2str_mapping.txt").lines() {
+            for line in include_str!("zh_char2str_mapping.txt").split("\n") {
                 let mut pair = line.split('\t');
                 let left = pair.next().unwrap().chars().next().unwrap();
                 let right = pair.next().unwrap();
@@ -259,7 +259,7 @@ impl BertNormalizer {
                 if (handle_chinese_chars && is_chinese_char(c)) || 
                    (separate_numbers && is_number(c)) || 
                    (check_special_chars && special_char_mapping.contains(&c))  {
-                    new_chars.extend(&[(' ', 1), (c, 0), (' ', 1)]);
+                    new_chars.extend(&[(' ', 0), (c, 1), (' ', 1)]);
                 } else {
                     new_chars.push((c, 0));
                 }
@@ -392,7 +392,7 @@ mod tests {
         let _ = norm.normalize(&mut input).unwrap();
         assert_eq!(
             input.get(),
-            "am 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折   o 能  <n>  "
+            "am 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折  木   o 能  <n>  "
         );
     }
 }

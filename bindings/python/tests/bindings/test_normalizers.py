@@ -12,75 +12,68 @@ class TestBertNormalizer:
         assert isinstance(pickle.loads(pickle.dumps(BertNormalizer())), BertNormalizer)
 
     def test_strip_accents(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = BertNormalizer(
+        normalizer = BertNormalizer(
             strip_accents=True, lowercase=False, handle_chinese_chars=False, 
             separate_numbers=False, clean_text=False, zh_norm=False
         )
 
-        output = tokenizer.normalize("Héllò")
+        output = normalizer.normalize_str("Héllò")
         assert output == "Hello"
 
     def test_handle_chinese_chars(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = BertNormalizer(
+        normalizer = BertNormalizer(
             strip_accents=False, lowercase=False, handle_chinese_chars=True, 
             separate_numbers=False, clean_text=False, zh_norm=False
         )
 
-        output = tokenizer.normalize("你好")
+        output = normalizer.normalize_str("你好")
         assert output == " 你  好 "
 
     def test_handle_separate_numbers(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = BertNormalizer(
+        normalizer = BertNormalizer(
             strip_accents=False, lowercase=False, handle_chinese_chars=True, 
             separate_numbers=True, clean_text=False, zh_norm=False
         )
 
-        output = tokenizer.normalize("你好123 is 123")
+        output = normalizer.normalize_str("你好123 is 123")
         assert output == " 你  好  1  2  3  is  1  2  3 "
 
     def test_clean_text(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = BertNormalizer(
+        normalizer = BertNormalizer(
             strip_accents=False, lowercase=False, handle_chinese_chars=False, 
             separate_numbers=False, clean_text=True, zh_norm=False
         )
 
-        output = tokenizer.normalize("\ufeffHello")
+        output = normalizer.normalize_str("\ufeffHello")
         assert output == "Hello"
 
     def test_lowercase(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = BertNormalizer(
+        normalizer = BertNormalizer(
             strip_accents=False, lowercase=True, handle_chinese_chars=False, 
             separate_numbers=False, clean_text=False, zh_norm=False
         )
 
-        output = tokenizer.normalize("Héllò")
+        output = normalizer.normalize_str("Héllò")
         assert output == "héllò"
 
     def test_special_chars(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = BertNormalizer(
+        normalizer = BertNormalizer(
             strip_accents=False, lowercase=False, handle_chinese_chars=False, 
             separate_numbers=False, clean_text=False, 
             special_chars="$%", zh_norm=False
         )
 
-        output = tokenizer.normalize("$100 and 0.5% $$ %%")
+        output = normalizer.normalize_str("$100 and 0.5% $$ %%")
         assert output == " $ 100 and 0.5 %   $  $   %  % ", output
 
 
     def test_zh_norm(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = BertNormalizer(
+        normalizer = BertNormalizer(
             strip_accents=False, lowercase=False, handle_chinese_chars=False, 
             separate_numbers=False, clean_text=False, zh_norm=True
         )
 
-        output = tokenizer.normalize("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \x00" )
+        output = normalizer.normalize_str("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \x00" )
         assert output == "系列 聯系 << 聯繫  o氹 氹 席 榮 折  o能 <n>  ", output
 
 
@@ -91,10 +84,9 @@ class TestSequence:
         assert isinstance(pickle.loads(pickle.dumps(Sequence([]))), Sequence)
 
     def test_can_make_sequences(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = Sequence([Lowercase(), Strip()])
+        normalizer = Sequence([Lowercase(), Strip()])
 
-        output = tokenizer.normalize("  HELLO  ")
+        output = normalizer.normalize_str("  HELLO  ")
         assert output == "hello"
 
 
@@ -105,10 +97,9 @@ class TestLowercase:
         assert isinstance(pickle.loads(pickle.dumps(Lowercase())), Lowercase)
 
     def test_lowercase(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = Lowercase()
+        normalizer = Lowercase()
 
-        output = tokenizer.normalize("HELLO")
+        output = normalizer.normalize_str("HELLO")
         assert output == "hello"
 
 
@@ -119,22 +110,19 @@ class TestStrip:
         assert isinstance(pickle.loads(pickle.dumps(Strip())), Strip)
 
     def test_left_strip(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = Strip(left=True, right=False)
+        normalizer = Strip(left=True, right=False)
 
-        output = tokenizer.normalize("  hello  ")
+        output = normalizer.normalize_str("  hello  ")
         assert output == "hello  "
 
     def test_right_strip(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = Strip(left=False, right=True)
+        normalizer = Strip(left=False, right=True)
 
-        output = tokenizer.normalize("  hello  ")
+        output = normalizer.normalize_str("  hello  ")
         assert output == "  hello"
 
     def test_full_strip(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.normalizer = Strip(left=True, right=True)
+        normalizer = Strip(left=True, right=True)
 
-        output = tokenizer.normalize("  hello  ")
+        output = normalizer.normalize_str("  hello  ")
         assert output == "hello"

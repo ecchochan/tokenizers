@@ -1,3 +1,4 @@
+import numpy as np
 import pickle
 import pytest
 from ..utils import data_dir, roberta_files, bert_files, multiprocessing_with_parallelism
@@ -65,7 +66,6 @@ class TestTokenizer:
         assert callable(tokenizer.no_truncation)
         assert callable(tokenizer.enable_padding)
         assert callable(tokenizer.no_padding)
-        assert callable(tokenizer.normalize)
         assert callable(tokenizer.encode)
         assert callable(tokenizer.encode_batch)
         assert callable(tokenizer.decode)
@@ -141,7 +141,7 @@ class TestTokenizer:
     def test_encode_formats(self, bert_files):
         tokenizer = BertWordPieceTokenizer(bert_files["vocab"])
 
-        # Well formed
+        # Encode
         output = tokenizer.encode("my name is john")
         assert output.tokens == ["[CLS]", "my", "name", "is", "john", "[SEP]"]
         output = tokenizer.encode("my name is john", "pair")
@@ -151,14 +151,91 @@ class TestTokenizer:
         output = tokenizer.encode(["my", "name", "is", "john"], ["pair"], is_pretokenized=True)
         assert output.tokens == ["[CLS]", "my", "name", "is", "john", "[SEP]", "pair", "[SEP]"]
 
-        output = tokenizer.encode_batch(["My name is John", "My name is Georges"])
-        assert output[0].tokens == ["[CLS]", "my", "name", "is", "john", "[SEP]"]
-        assert output[1].tokens == ["[CLS]", "my", "name", "is", "georges", "[SEP]"]
-        output = tokenizer.encode_batch([("my name is john", "pair"), ("my name is john", "pair")])
-        assert output[0].tokens == ["[CLS]", "my", "name", "is", "john", "[SEP]", "pair", "[SEP]"]
-        assert output[1].tokens == ["[CLS]", "my", "name", "is", "john", "[SEP]", "pair", "[SEP]"]
-        output = tokenizer.encode_batch([["my", "name", "is", "john"]], is_pretokenized=True)
-        assert output[0].tokens == ["[CLS]", "my", "name", "is", "john", "[SEP]"]
+        # Encode batch
+        result_single = [
+            ["[CLS]", "my", "name", "is", "john", "[SEP]"],
+            ["[CLS]", "my", "name", "is", "georges", "[SEP]"],
+        ]
+        result_pair = [
+            ["[CLS]", "my", "name", "is", "john", "[SEP]", "pair", "[SEP]"],
+            ["[CLS]", "my", "name", "is", "georges", "[SEP]", "pair", "[SEP]"],
+        ]
+
+        def format(encodings):
+            return [e.tokens for e in encodings]
+
+        def test_single(input, is_pretokenized=False):
+            output = tokenizer.encode_batch(input, is_pretokenized=is_pretokenized)
+            assert format(output) == result_single
+
+        def test_pair(input, is_pretokenized=False):
+            output = tokenizer.encode_batch(input, is_pretokenized=is_pretokenized)
+            assert format(output) == result_pair
+
+        # Classic inputs
+
+        # Lists
+        test_single(["My name is John", "My name is Georges"])
+        test_pair([("my name is john", "pair"), ("my name is georges", "pair")])
+        test_pair([["my name is john", "pair"], ["my name is georges", "pair"]])
+
+        # Tuples
+        test_single(("My name is John", "My name is Georges"))
+        test_pair((("My name is John", "pair"), ("My name is Georges", "pair")))
+
+        # Numpy
+        test_single(np.array(["My name is John", "My name is Georges"]))
+        test_pair(np.array([("My name is John", "pair"), ("My name is Georges", "pair")]))
+        test_pair(np.array([["My name is John", "pair"], ["My name is Georges", "pair"]]))
+
+        # PreTokenized inputs
+
+        # Lists
+        test_single([["My", "name", "is", "John"], ["My", "name", "is", "Georges"]], True)
+        test_pair(
+            [(["My", "name", "is", "John"], ["pair"]), (["My", "name", "is", "Georges"], ["pair"])],
+            True,
+        )
+        test_pair(
+            [[["My", "name", "is", "John"], ["pair"]], [["My", "name", "is", "Georges"], ["pair"]]],
+            True,
+        )
+
+        # Tuples
+        test_single((("My", "name", "is", "John"), ("My", "name", "is", "Georges")), True)
+        test_pair(
+            (
+                (("My", "name", "is", "John"), ("pair",)),
+                (("My", "name", "is", "Georges"), ("pair",)),
+            ),
+            True,
+        )
+        test_pair(
+            ((["My", "name", "is", "John"], ["pair"]), (["My", "name", "is", "Georges"], ["pair"])),
+            True,
+        )
+
+        # Numpy
+        test_single(np.array([["My", "name", "is", "John"], ["My", "name", "is", "Georges"]]), True)
+        test_single(np.array((("My", "name", "is", "John"), ("My", "name", "is", "Georges"))), True)
+        test_pair(
+            np.array(
+                [
+                    [["My", "name", "is", "John"], ["pair"]],
+                    [["My", "name", "is", "Georges"], ["pair"]],
+                ]
+            ),
+            True,
+        )
+        test_pair(
+            np.array(
+                (
+                    (("My", "name", "is", "John"), ("pair",)),
+                    (("My", "name", "is", "Georges"), ("pair",)),
+                )
+            ),
+            True,
+        )
 
         # Mal formed
         with pytest.raises(ValueError, match="InputSequence must be str"):
@@ -264,14 +341,6 @@ class TestTokenizer:
         # Can retrieve vocab's size without added tokens
         size = tokenizer.get_vocab_size(with_added_tokens=False)
         assert size == 0
-
-    def test_normalize(self):
-        tokenizer = Tokenizer(BPE())
-        tokenizer.add_tokens(["my", "name", "is", "john", "pair"])
-        tokenizer.normalizer = Lowercase()
-
-        output = tokenizer.normalize("My Name Is John")
-        assert output == "my name is john"
 
     def test_post_process(self):
         tokenizer = Tokenizer(BPE())

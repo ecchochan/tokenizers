@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use numpy::PyArray1;
 use pyo3::exceptions;
 use pyo3::prelude::*;
 use pyo3::types::*;
@@ -171,98 +172,188 @@ impl PyObjectProtocol for PyAddedToken {
     }
 }
 
-struct TextInputSequence(tk::InputSequence);
-impl FromPyObject<'_> for TextInputSequence {
-    fn extract(ob: &PyAny) -> PyResult<Self> {
+struct TextInputSequence<'s>(tk::InputSequence<'s>);
+impl<'s> FromPyObject<'s> for TextInputSequence<'s> {
+    fn extract(ob: &'s PyAny) -> PyResult<Self> {
         let err = exceptions::ValueError::py_err("TextInputSequence must be str");
         if let Ok(s) = ob.downcast::<PyString>() {
-            let seq: String = s.extract().map_err(|_| err)?;
-            Ok(Self(seq.into()))
+            Ok(Self(s.to_string().map_err(|_| err)?.into()))
         } else {
             Err(err)
         }
     }
 }
-impl From<TextInputSequence> for tk::InputSequence {
-    fn from(s: TextInputSequence) -> Self {
+impl<'s> From<TextInputSequence<'s>> for tk::InputSequence<'s> {
+    fn from(s: TextInputSequence<'s>) -> Self {
         s.0
     }
 }
 
-struct PreTokenizedInputSequence(tk::InputSequence);
-impl FromPyObject<'_> for PreTokenizedInputSequence {
+struct PyArrayUnicode(Vec<String>);
+impl FromPyObject<'_> for PyArrayUnicode {
     fn extract(ob: &PyAny) -> PyResult<Self> {
-        let err = exceptions::ValueError::py_err(
-            "PreTokenizedInputSequence must be Union[List[str], Tuple[str]]",
-        );
+        let array = ob.downcast::<PyArray1<u8>>()?;
+        let arr = array.as_array_ptr();
+        let (type_num, elsize, alignment, data) = unsafe {
+            let desc = (*arr).descr;
+            (
+                (*desc).type_num,
+                (*desc).elsize as usize,
+                (*desc).alignment as usize,
+                (*arr).data,
+            )
+        };
+        let n_elem = array.shape()[0];
 
+        // type_num == 19 => Unicode
+        if type_num != 19 {
+            return Err(exceptions::TypeError::py_err("Expected a np.array[str]"));
+        }
+
+        unsafe {
+            let all_bytes = std::slice::from_raw_parts(data as *const u8, elsize * n_elem);
+
+            let seq = (0..n_elem)
+                .map(|i| {
+                    let bytes = &all_bytes[i * elsize..(i + 1) * elsize];
+                    let unicode = pyo3::ffi::PyUnicode_FromUnicode(
+                        bytes.as_ptr() as *const _,
+                        elsize as isize / alignment as isize,
+                    );
+                    let gil = Python::acquire_gil();
+                    let py = gil.python();
+                    let obj = PyObject::from_owned_ptr(py, unicode);
+                    let s = obj.cast_as::<PyString>(py)?;
+                    Ok(s.to_string()?.trim_matches(char::from(0)).to_owned())
+                })
+                .collect::<PyResult<Vec<_>>>()?;
+
+            Ok(Self(seq))
+        }
+    }
+}
+impl From<PyArrayUnicode> for tk::InputSequence<'_> {
+    fn from(s: PyArrayUnicode) -> Self {
+        s.0.into()
+    }
+}
+
+struct PyArrayStr(Vec<String>);
+impl FromPyObject<'_> for PyArrayStr {
+    fn extract(ob: &PyAny) -> PyResult<Self> {
+        let array = ob.downcast::<PyArray1<u8>>()?;
+        let arr = array.as_array_ptr();
+        let (type_num, data) = unsafe { ((*(*arr).descr).type_num, (*arr).data) };
+        let n_elem = array.shape()[0];
+
+        if type_num != 17 {
+            return Err(exceptions::TypeError::py_err("Expected a np.array[str]"));
+        }
+
+        unsafe {
+            let objects = std::slice::from_raw_parts(data as *const PyObject, n_elem);
+
+            let seq = objects
+                .into_iter()
+                .map(|obj| {
+                    let gil = Python::acquire_gil();
+                    let py = gil.python();
+                    let s = obj.cast_as::<PyString>(py)?;
+                    Ok(s.to_string()?.into_owned())
+                })
+                .collect::<PyResult<Vec<_>>>()?;
+
+            Ok(Self(seq))
+        }
+    }
+}
+impl From<PyArrayStr> for tk::InputSequence<'_> {
+    fn from(s: PyArrayStr) -> Self {
+        s.0.into()
+    }
+}
+
+struct PreTokenizedInputSequence<'s>(tk::InputSequence<'s>);
+impl<'s> FromPyObject<'s> for PreTokenizedInputSequence<'s> {
+    fn extract(ob: &'s PyAny) -> PyResult<Self> {
+        if let Ok(seq) = ob.extract::<PyArrayUnicode>() {
+            return Ok(Self(seq.into()));
+        }
+        if let Ok(seq) = ob.extract::<PyArrayStr>() {
+            return Ok(Self(seq.into()));
+        }
         if let Ok(s) = ob.downcast::<PyList>() {
-            let seq = s.extract::<Vec<String>>().map_err(|_| err)?;
-            Ok(Self(seq.into()))
-        } else if let Ok(s) = ob.downcast::<PyTuple>() {
-            let seq = s.extract::<Vec<String>>().map_err(|_| err)?;
-            Ok(Self(seq.into()))
-        } else {
-            Err(err)
+            if let Ok(seq) = s.extract::<Vec<&str>>() {
+                return Ok(Self(seq.into()));
+            }
         }
+        if let Ok(s) = ob.downcast::<PyTuple>() {
+            if let Ok(seq) = s.extract::<Vec<&str>>() {
+                return Ok(Self(seq.into()));
+            }
+        }
+        Err(exceptions::ValueError::py_err(
+            "PreTokenizedInputSequence must be Union[List[str], Tuple[str]]",
+        ))
     }
 }
-impl From<PreTokenizedInputSequence> for tk::InputSequence {
-    fn from(s: PreTokenizedInputSequence) -> Self {
+impl<'s> From<PreTokenizedInputSequence<'s>> for tk::InputSequence<'s> {
+    fn from(s: PreTokenizedInputSequence<'s>) -> Self {
         s.0
     }
 }
 
-struct TextEncodeInput(tk::EncodeInput);
-impl FromPyObject<'_> for TextEncodeInput {
-    fn extract(ob: &PyAny) -> PyResult<Self> {
-        let err = exceptions::ValueError::py_err(
-            "TextEncodeInput must be Union[TextInputSequence, Tuple[InputSequence, InputSequence]]",
-        );
-
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-        let obj = ob.to_object(py);
-
-        if let Ok(i) = obj.extract::<TextInputSequence>(py) {
-            Ok(Self(i.into()))
-        } else if let Ok((i1, i2)) = obj.extract::<(TextInputSequence, TextInputSequence)>(py) {
-            Ok(Self((i1, i2).into()))
-        } else {
-            Err(err)
+struct TextEncodeInput<'s>(tk::EncodeInput<'s>);
+impl<'s> FromPyObject<'s> for TextEncodeInput<'s> {
+    fn extract(ob: &'s PyAny) -> PyResult<Self> {
+        if let Ok(i) = ob.extract::<TextInputSequence>() {
+            return Ok(Self(i.into()));
         }
+        if let Ok((i1, i2)) = ob.extract::<(TextInputSequence, TextInputSequence)>() {
+            return Ok(Self((i1, i2).into()));
+        }
+        if let Ok(arr) = ob.extract::<Vec<&PyAny>>() {
+            if arr.len() == 2 {
+                let first = arr[0].extract::<TextInputSequence>()?;
+                let second = arr[1].extract::<TextInputSequence>()?;
+                return Ok(Self((first, second).into()));
+            }
+        }
+        Err(exceptions::ValueError::py_err(
+            "TextEncodeInput must be Union[TextInputSequence, Tuple[InputSequence, InputSequence]]",
+        ))
     }
 }
-impl From<TextEncodeInput> for tk::tokenizer::EncodeInput {
-    fn from(i: TextEncodeInput) -> Self {
+impl<'s> From<TextEncodeInput<'s>> for tk::tokenizer::EncodeInput<'s> {
+    fn from(i: TextEncodeInput<'s>) -> Self {
         i.0
     }
 }
-struct PreTokenizedEncodeInput(tk::EncodeInput);
-impl FromPyObject<'_> for PreTokenizedEncodeInput {
-    fn extract(ob: &PyAny) -> PyResult<Self> {
-        let err = exceptions::ValueError::py_err(
+struct PreTokenizedEncodeInput<'s>(tk::EncodeInput<'s>);
+impl<'s> FromPyObject<'s> for PreTokenizedEncodeInput<'s> {
+    fn extract(ob: &'s PyAny) -> PyResult<Self> {
+        if let Ok(i) = ob.extract::<PreTokenizedInputSequence>() {
+            return Ok(Self(i.into()));
+        }
+        if let Ok((i1, i2)) = ob.extract::<(PreTokenizedInputSequence, PreTokenizedInputSequence)>()
+        {
+            return Ok(Self((i1, i2).into()));
+        }
+        if let Ok(arr) = ob.extract::<Vec<&PyAny>>() {
+            if arr.len() == 2 {
+                let first = arr[0].extract::<PreTokenizedInputSequence>()?;
+                let second = arr[1].extract::<PreTokenizedInputSequence>()?;
+                return Ok(Self((first, second).into()));
+            }
+        }
+        Err(exceptions::ValueError::py_err(
             "PreTokenizedEncodeInput must be Union[PreTokenizedInputSequence, \
             Tuple[PreTokenizedInputSequence, PreTokenizedInputSequence]]",
-        );
-
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-        let obj = ob.to_object(py);
-
-        if let Ok(i) = obj.extract::<PreTokenizedInputSequence>(py) {
-            Ok(Self(i.into()))
-        } else if let Ok((i1, i2)) =
-            obj.extract::<(PreTokenizedInputSequence, PreTokenizedInputSequence)>(py)
-        {
-            Ok(Self((i1, i2).into()))
-        } else {
-            Err(err)
-        }
+        ))
     }
 }
-impl From<PreTokenizedEncodeInput> for tk::tokenizer::EncodeInput {
-    fn from(i: PreTokenizedEncodeInput) -> Self {
+impl<'s> From<PreTokenizedEncodeInput<'s>> for tk::tokenizer::EncodeInput<'s> {
+    fn from(i: PreTokenizedEncodeInput<'s>) -> Self {
         i.0
     }
 }
@@ -509,15 +600,6 @@ impl PyTokenizer {
         })
     }
 
-    fn normalize(&self, sentence: &str) -> PyResult<String> {
-        ToPyResult(
-            self.tokenizer
-                .normalize(sentence)
-                .map(|s| s.get().to_owned()),
-        )
-        .into()
-    }
-
     /// Input can be:
     /// encode("A single sequence")
     /// encode("A sequence", "And its pair")
@@ -553,7 +635,7 @@ impl PyTokenizer {
 
         ToPyResult(
             self.tokenizer
-                .encode(input, add_special_tokens)
+                .encode_char_offsets(input, add_special_tokens)
                 .map(|e| e.into()),
         )
         .into()
@@ -588,7 +670,7 @@ impl PyTokenizer {
         gil.python().allow_threads(|| {
             ToPyResult(
                 self.tokenizer
-                    .encode_batch(input, add_special_tokens)
+                    .encode_batch_char_offsets(input, add_special_tokens)
                     .map(|encodings| encodings.into_iter().map(|e| e.into()).collect()),
             )
             .into()

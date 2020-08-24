@@ -29,6 +29,10 @@ bench = false
 name = "bpe_benchmark"
 harness = false
 
+[[bench]]
+name = "bert_benchmark"
+harness = false
+
 [dependencies]
 lazy_static = "1.4"
 rand = "0.7"
@@ -46,6 +50,7 @@ indicatif = "0.14"
 fnv = "1.0.3"
 opencc-rust = "1.0.12"
 itertools = "0.9"
+log = "0.4"
 
 [dev-dependencies]
 criterion = "0.3"
