@@ -73,8 +73,19 @@ class TestBertNormalizer:
             separate_numbers=False, clean_text=False, zh_norm=True
         )
 
-        output = normalizer.normalize_str(" 系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \x00" )
-        assert output == " 系列 聯系 << 聯繫  o氹 氹 席 榮 折木  o能 <n>  ", output
+        output = normalizer.normalize_str("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \x00" )
+        assert output == "系列 聯系 << 聯繫  o氹 氹 席 榮 折木  o能 <n>  ", output
+
+
+    def test_all(self):
+        normalizer = BertNormalizer(
+            strip_accents=True, lowercase=True, handle_chinese_chars=True, 
+            separate_numbers=True, clean_text=True, zh_norm=True, 
+            special_chars="123"
+        )
+
+        output = normalizer.normalize_str("1你好")
+        assert output == " 1  你  好 "
 
 
 class TestSequence:

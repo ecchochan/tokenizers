@@ -233,7 +233,7 @@ impl BertNormalizer {
                             if (handle_chinese_chars && is_chinese_char(c2)) || 
                                (separate_numbers && is_number(c2)) || 
                                (check_special_chars && special_char_mapping.contains(&c2))  {
-                                new_chars.extend(&[(' ', 1), (c2, if i == 0 {0} else {1}), (' ', 1)]);
+                                new_chars.extend(&[(' ', if i == 0 {0} else {1}), (c2, 1), (' ', 1)]);
                             } else {
                                 new_chars.push((c2, if i == 0 {0} else {1}));
                             }
@@ -243,7 +243,7 @@ impl BertNormalizer {
                         if (handle_chinese_chars && is_chinese_char(c)) || 
                            (separate_numbers && is_number(c)) || 
                            (check_special_chars && special_char_mapping.contains(&c))  {
-                            new_chars.extend(&[(' ', 1), (c, 0), (' ', 1)]);
+                            new_chars.extend(&[(' ', 0), (c, 1), (' ', 1)]);
                         } else {
                             new_chars.push((c, 0));
                         };
@@ -259,7 +259,7 @@ impl BertNormalizer {
                 if (handle_chinese_chars && is_chinese_char(c)) || 
                    (separate_numbers && is_number(c)) || 
                    (check_special_chars && special_char_mapping.contains(&c))  {
-                    new_chars.extend(&[(' ', 1), (c, 0), (' ', 1)]);
+                    new_chars.extend(&[(' ', 0), (c, 1), (' ', 1)]);
                 } else {
                     new_chars.push((c, 0));
                 }
