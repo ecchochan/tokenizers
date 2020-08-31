@@ -185,7 +185,7 @@ impl BertNormalizer {
             }
         
         }
-        
+
         if handle_simpl{
             for line in include_str!("s2t.txt").lines() {
                 let mut pair = line.split('\t');
@@ -433,11 +433,11 @@ mod tests {
             true,
             true,
         );
-        let mut input = NormalizedString::from("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \u{00}");
+        let mut input = NormalizedString::from("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 买书 <n> \u{00}");
         let _ = norm.normalize(&mut input).unwrap();
         assert_eq!(
             input.get(),
-            " 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折  木   o 能  <n>  "
+            " 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折  木   o 能   買  書  <n>  "
         );
     }
 }
