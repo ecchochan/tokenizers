@@ -440,11 +440,11 @@ mod tests {
             " 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折  木   o 能   買  書  <n>  "
         );
 
-        input = NormalizedString::from("头");
+        input = NormalizedString::from("头部");
         let _ = norm.normalize(&mut input).unwrap();
         assert_eq!(
             input.get(),
-            " 頭 "
+            " 頭  部 "
         );
     }
 }
