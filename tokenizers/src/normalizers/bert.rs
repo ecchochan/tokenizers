@@ -190,16 +190,21 @@ impl BertNormalizer {
             for line in include_str!("s2t.txt").lines() {
                 let mut pair = line.split('\t');
                 let left = pair.next().unwrap().chars().next().unwrap();
-                let right = pair.next().unwrap().chars().next().unwrap();
                 handle_simpl_mapping.insert(left);
-                
-                if !zh_norm_mapping.contains_key(&left) {
-                    match zh_norm_mapping.get(&right) {
-                        Some(rep) => zh_norm_mapping.insert(left, rep.to_string()),
-                        None => zh_norm_mapping.insert(left, right.to_string())
-                    };
+                let right_ = pair.next();
+                if right_ != None {
+                    let right = right_.unwrap().chars().next().unwrap();
+                    
+                    if !zh_norm_mapping.contains_key(&left) {
+                        match zh_norm_mapping.get(&right) {
+                            Some(rep) => zh_norm_mapping.insert(left, rep.to_string()),
+                            None => zh_norm_mapping.insert(left, right.to_string())
+                        };
+    
+                    }
 
                 }
+                
                 
             }
 

@@ -81,7 +81,7 @@ class TestBertNormalizer:
         )
 
         output = tokenizer.normalize("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \x00" )
-        assert output == "系列 聯系 << 聯繫  o氹 氹 席 榮 折  o能 <n>  ", output
+        assert output == "系列 聯系 << 聯繫  o氹 氹 席 榮 折  o能 <n> \x00", output
 
         output = tokenizer.normalize("头部" )
         assert output == " 頭  部 ", output
