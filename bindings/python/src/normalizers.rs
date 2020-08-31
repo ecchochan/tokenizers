@@ -57,6 +57,7 @@ impl BertNormalizer {
         let mut special_chars: String = "".to_string();
         let mut opencc_config: String = "s2t".to_string();
         let mut zh_norm = false;
+        let mut handle_simpl = false;
 
         if let Some(kwargs) = kwargs {
             for (key, value) in kwargs {
@@ -70,6 +71,7 @@ impl BertNormalizer {
                     "special_chars" => special_chars = value.extract()?,
                     "opencc_config" => opencc_config = value.extract()?,
                     "zh_norm" => zh_norm = value.extract()?,
+                    "handle_simpl" => handle_simpl = value.extract()?,
                     _ => println!("Ignored unknown kwargs option {}", key),
                 }
             }
@@ -87,6 +89,7 @@ impl BertNormalizer {
                     special_chars,
                     opencc_config,
                     zh_norm,
+                    handle_simpl
                 ))),
             },
         ))

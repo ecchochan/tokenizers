@@ -24,6 +24,7 @@ class BertNormalizer(Normalizer):
         special_chars: Optional[str] = "",
         opencc_config: Optional[str] = "s2t",
         zh_norm: Optional[bool] = False,
+        handle_simpl: Optional[bool] = False,
     ) -> None:
         """ Instantiate a BertNormalizer with the given options.
 
@@ -50,6 +51,9 @@ class BertNormalizer(Normalizer):
 
             zh_norm: (`optional`) boolean:
                 Chars that will be replaced by custom mapping
+
+            handle_simpl: (`optional`) boolean:
+                Chars that will be normalized by simplified characters
 
         Returns:
             Normalizer

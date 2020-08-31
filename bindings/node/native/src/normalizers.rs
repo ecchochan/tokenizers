@@ -29,6 +29,7 @@ struct BertNormalizerOptions {
     lowercase: bool,
     special_chars: String,
     zh_norm: bool,
+    handle_simpl: bool,
 }
 impl Default for BertNormalizerOptions {
     fn default() -> Self {
@@ -39,6 +40,7 @@ impl Default for BertNormalizerOptions {
             lowercase: true,
             special_chars: "".to_string(),
             zh_norm: false,
+            handle_simpl: false,
         }
     }
 }
@@ -50,6 +52,7 @@ impl Default for BertNormalizerOptions {
 ///   lowercase?: bool = true
 ///   special_chars?: String = "".to_string()
 ///   zh_norm?: bool = false
+///   handle_simpl?: bool = false
 /// })
 fn bert_normalizer(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
     let options = cx
@@ -68,6 +71,7 @@ fn bert_normalizer(mut cx: FunctionContext) -> JsResult<JsNormalizer> {
             options.lowercase,
             options.special_chars,
             options.zh_norm,
+            options.handle_simpl,
         )));
     Ok(normalizer)
 }

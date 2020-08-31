@@ -128,6 +128,10 @@ pub struct BertNormalizer {
     zh_norm_mapping: FnvHashMap<char, String>,
     /// openCC Object
     opencc: _OpenCC,
+    /// Whether to normalize smiplified zh characters
+    handle_simpl: bool,
+    /// Chars that will be normalized by smiplified zh characters
+    handle_simpl_mapping: FnvHashSet<char>,
 }
 
 impl Default for BertNormalizer {
@@ -142,7 +146,9 @@ impl Default for BertNormalizer {
             special_char_mapping: FnvHashSet::default(),
             zh_norm: false,
             zh_norm_mapping: FnvHashMap::default(),
-            opencc: _OpenCC::new(String::from("s2t"))
+            opencc: _OpenCC::new(String::from("s2t")),
+            handle_simpl: true,
+            handle_simpl_mapping: FnvHashSet::default(),
         }
     }
 }
@@ -157,15 +163,17 @@ impl BertNormalizer {
         special_chars: String,
         opencc_config: String,
         zh_norm: bool,
+        handle_simpl: bool,
     ) -> Self {
         let mut special_char_mapping: FnvHashSet<char> = FnvHashSet::default();
+        let mut handle_simpl_mapping: FnvHashSet<char> = FnvHashSet::default();
         let mut zh_norm_mapping: FnvHashMap<char, String> = FnvHashMap::default();
-        for c in special_chars.chars() {
-            special_char_mapping.insert(c);
-        }
         let mut check_special_chars = false;
         if special_chars.len() > 0 {
             check_special_chars = true;
+            for c in special_chars.chars() {
+                special_char_mapping.insert(c);
+            }
         }
 
         if zh_norm {
@@ -176,6 +184,25 @@ impl BertNormalizer {
                 zh_norm_mapping.insert(left, right.to_string());
             }
         
+        }
+        
+        if handle_simpl{
+            for line in include_str!("s2t.txt").lines() {
+                let mut pair = line.split('\t');
+                let left = pair.next().unwrap().chars().next().unwrap();
+                let right = pair.next().unwrap().chars().next().unwrap();
+                handle_simpl_mapping.insert(left);
+                
+                if !zh_norm_mapping.contains_key(&left) {
+                    match zh_norm_mapping.get(&right) {
+                        Some(rep) => zh_norm_mapping.insert(left, rep.to_string()),
+                        None => zh_norm_mapping.insert(left, right.to_string())
+                    };
+
+                }
+                
+            }
+
         }
 
         let opencc = _OpenCC::new(opencc_config);
@@ -191,7 +218,9 @@ impl BertNormalizer {
             special_char_mapping,
             zh_norm,
             zh_norm_mapping,
-            opencc
+            opencc,
+            handle_simpl,
+            handle_simpl_mapping
         }
     }
 
@@ -275,20 +304,45 @@ impl Normalizer for BertNormalizer {
         // Use OpenCC to normalize for Simplfied Chinese
         //
             
-        if self.zh_norm {
+        if self.handle_simpl {
             // 
             // fix unknown error from OpenCC for having '\u{00}' in the string
             // 
-            
-            let normalized_str = normalized.get();
-            let normalized_str_arg;
-            if normalized_str.chars().any(|c| c == '\u{00}') {
-                normalized_str_arg = normalized_str.replace("\u{00}", " ");
-            }else {
-                normalized_str_arg = normalized_str.to_string();
-            }
+            let mut need_clean_count = 0;
+            let mut seen: FnvHashSet<char> = FnvHashSet::default();
 
-            normalized.set_normalized(self.opencc.opencc.convert(normalized_str_arg));
+            normalized.for_each(|c| {
+                if c as u32 > 12032 {
+                    match self.handle_simpl_mapping.get(&c) {
+                        Some(_) => {
+                            match seen.get(&c) {
+                                Some(_) => {},
+                                None => {
+                                    need_clean_count = need_clean_count + 1;
+                                    seen.insert(c);
+                                }
+                            }
+                        },
+                        None => {}
+                    }
+
+                }
+
+
+            });
+            
+            if need_clean_count > 1 {
+                let normalized_str = normalized.get();
+                let normalized_str_arg;
+                if normalized_str.chars().any(|c| c == '\u{00}') {
+                    normalized_str_arg = normalized_str.replace("\u{00}", " ");
+                }else {
+                    normalized_str_arg = normalized_str.to_string();
+                }
+
+                normalized.set_normalized(self.opencc.opencc.convert(normalized_str_arg));
+            }
+            
         }
         if self.clean_text {
             self.do_clean_text(normalized);
@@ -377,12 +431,13 @@ mod tests {
             "".to_string(),
             "s2t".to_string(),
             true,
+            true,
         );
         let mut input = NormalizedString::from("系列 聯系 « 联系 𠱁 氹 𥱊 栄 梊 𠹌 <n> \u{00}");
         let _ = norm.normalize(&mut input).unwrap();
         assert_eq!(
             input.get(),
-            " 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折   o 能  <n>  "
+            " 系  列   聯  系  <<  聯  繫   o 氹   氹   席   榮   折  木   o 能  <n>  "
         );
     }
 }
