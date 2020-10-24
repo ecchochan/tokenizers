@@ -1,11 +1,11 @@
 [package]
-name = "tokenizers-python"
+name = "tokenizers-zh-python"
 version = "0.8.1"
 authors = ["Anthony MOI <m.anthony.moi@gmail.com>"]
 edition = "2018"
 
 [lib]
-name = "tokenizers"
+name = "tokenizers_zh"
 crate-type = ["cdylib"]
 
 [dependencies]
