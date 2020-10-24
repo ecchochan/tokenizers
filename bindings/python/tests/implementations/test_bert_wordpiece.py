@@ -1,5 +1,5 @@
 from ..utils import data_dir, bert_files, multiprocessing_with_parallelism
-from tokenizers import BertWordPieceTokenizer
+from tokenizers_zh import BertWordPieceTokenizer
 
 
 class TestBertWordPieceBPE:

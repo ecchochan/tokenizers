@@ -1,5 +1,5 @@
 from ..utils import data_dir, roberta_files, multiprocessing_with_parallelism
-from tokenizers import ByteLevelBPETokenizer
+from tokenizers_zh import ByteLevelBPETokenizer
 
 
 class TestByteLevelBPE:

@@ -2,12 +2,12 @@ import pickle
 import pytest
 from ..utils import data_dir, roberta_files, bert_files, multiprocessing_with_parallelism
 
-from tokenizers import AddedToken, Tokenizer, Encoding
-from tokenizers.models import Model, BPE, WordPiece
-from tokenizers.pre_tokenizers import ByteLevel
-from tokenizers.processors import RobertaProcessing, BertProcessing
-from tokenizers.normalizers import Lowercase
-from tokenizers.implementations import BertWordPieceTokenizer
+from tokenizers_zh import AddedToken, Tokenizer, Encoding
+from tokenizers_zh.models import Model, BPE, WordPiece
+from tokenizers_zh.pre_tokenizers import ByteLevel
+from tokenizers_zh.processors import RobertaProcessing, BertProcessing
+from tokenizers_zh.normalizers import Lowercase
+from tokenizers_zh.implementations import BertWordPieceTokenizer
 
 
 class TestAddedToken:

@@ -14,13 +14,13 @@ PreTokenizedEncodeInput = Union[
 InputSequence = Union[TextInputSequence, PreTokenizedInputSequence]
 EncodeInput = Union[TextEncodeInput, PreTokenizedEncodeInput]
 
-from .tokenizers import Tokenizer, Encoding, AddedToken
-from .tokenizers import decoders
-from .tokenizers import models
-from .tokenizers import normalizers
-from .tokenizers import pre_tokenizers
-from .tokenizers import processors
-from .tokenizers import trainers
+from .tokenizers_zh import Tokenizer, Encoding, AddedToken
+from .tokenizers_zh import decoders
+from .tokenizers_zh import models
+from .tokenizers_zh import normalizers
+from .tokenizers_zh import pre_tokenizers
+from .tokenizers_zh import processors
+from .tokenizers_zh import trainers
 from .implementations import (
     ByteLevelBPETokenizer,
     CharBPETokenizer,

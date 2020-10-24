@@ -3,7 +3,7 @@ import pickle
 
 from ..utils import data_dir, roberta_files, bert_files
 
-from tokenizers.models import Model, BPE, WordPiece, WordLevel
+from tokenizers_zh.models import Model, BPE, WordPiece, WordLevel
 
 
 class TestBPE:

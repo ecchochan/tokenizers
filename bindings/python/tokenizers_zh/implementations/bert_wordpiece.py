@@ -1,8 +1,8 @@
-from tokenizers import Tokenizer, AddedToken, decoders, trainers
-from tokenizers.models import WordPiece
-from tokenizers.normalizers import BertNormalizer
-from tokenizers.pre_tokenizers import BertPreTokenizer
-from tokenizers.processors import BertProcessing
+from tokenizers_zh import Tokenizer, AddedToken, decoders, trainers
+from tokenizers_zh.models import WordPiece
+from tokenizers_zh.normalizers import BertNormalizer
+from tokenizers_zh.pre_tokenizers import BertPreTokenizer
+from tokenizers_zh.processors import BertProcessing
 from .base_tokenizer import BaseTokenizer
 
 from typing import Optional, List, Union

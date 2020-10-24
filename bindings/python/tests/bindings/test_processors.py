@@ -2,10 +2,10 @@ import pickle
 
 from ..utils import data_dir, roberta_files
 
-from tokenizers import Tokenizer
-from tokenizers.models import BPE
-from tokenizers.pre_tokenizers import ByteLevel as ByteLevelPreTokenizer
-from tokenizers.processors import PostProcessor, BertProcessing, RobertaProcessing, ByteLevel
+from tokenizers_zh import Tokenizer
+from tokenizers_zh.models import BPE
+from tokenizers_zh.pre_tokenizers import ByteLevel as ByteLevelPreTokenizer
+from tokenizers_zh.processors import PostProcessor, BertProcessing, RobertaProcessing, ByteLevel
 
 
 class TestBertProcessing:

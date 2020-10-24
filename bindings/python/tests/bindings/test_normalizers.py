@@ -1,8 +1,8 @@
 import pickle
 
-from tokenizers import Tokenizer
-from tokenizers.models import BPE
-from tokenizers.normalizers import Normalizer, BertNormalizer, Sequence, Lowercase, Strip
+from tokenizers_zh import Tokenizer
+from tokenizers_zh.models import BPE
+from tokenizers_zh.normalizers import Normalizer, BertNormalizer, Sequence, Lowercase, Strip
 
 
 class TestBertNormalizer:

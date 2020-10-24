@@ -1,7 +1,7 @@
 import pytest
 import pickle
 
-from tokenizers.decoders import Decoder, ByteLevel, WordPiece, Metaspace, BPEDecoder
+from tokenizers_zh.decoders import Decoder, ByteLevel, WordPiece, Metaspace, BPEDecoder
 
 
 class TestByteLevel:

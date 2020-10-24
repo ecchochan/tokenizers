@@ -1,5 +1,5 @@
 from ..utils import data_dir, openai_files, multiprocessing_with_parallelism
-from tokenizers import CharBPETokenizer
+from tokenizers_zh import CharBPETokenizer
 
 
 class TestBertWordPieceBPE:

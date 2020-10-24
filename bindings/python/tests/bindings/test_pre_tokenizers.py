@@ -1,7 +1,7 @@
 import pytest
 import pickle
 
-from tokenizers.pre_tokenizers import (
+from tokenizers_zh.pre_tokenizers import (
     PreTokenizer,
     ByteLevel,
     Whitespace,
