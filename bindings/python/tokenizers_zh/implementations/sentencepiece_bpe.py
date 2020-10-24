@@ -1,6 +1,6 @@
-from tokenizers import Tokenizer, AddedToken, pre_tokenizers, decoders, trainers
-from tokenizers.models import BPE
-from tokenizers.normalizers import NFKC
+from tokenizers_zh import Tokenizer, AddedToken, pre_tokenizers, decoders, trainers
+from tokenizers_zh.models import BPE
+from tokenizers_zh.normalizers import NFKC
 from .base_tokenizer import BaseTokenizer
 
 from typing import Optional, List, Union

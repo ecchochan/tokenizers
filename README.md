@@ -41,7 +41,7 @@ Start using in a matter of seconds:
 
 ```python
 # Tokenizers provides ultra-fast implementations of most current tokenizers:
->>> from tokenizers import (ByteLevelBPETokenizer,
+>>> from tokenizers_zh import (ByteLevelBPETokenizer,
                             CharBPETokenizer,
                             SentencePieceBPETokenizer,
                             BertWordPieceTokenizer)

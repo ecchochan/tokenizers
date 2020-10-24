@@ -1,6 +1,6 @@
 import argparse
 
-from tokenizers import Tokenizer, models, pre_tokenizers, decoders
+from tokenizers_zh import Tokenizer, models, pre_tokenizers, decoders
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--vocab", default=None, type=str, required=True, help="The vocab.json file")

@@ -74,7 +74,7 @@ We provide some pre-build tokenizers to cover the most common cases. You can eas
 these using some `vocab.json` and `merges.txt` files:
 
 ```python
-from tokenizers import CharBPETokenizer
+from tokenizers_zh import CharBPETokenizer
 
 # Initialize a tokenizer
 vocab = "./path/to/vocab.json"
@@ -90,7 +90,7 @@ print(encoded.tokens)
 And you can train them just as simply:
 
 ```python
-from tokenizers import CharBPETokenizer
+from tokenizers_zh import CharBPETokenizer
 
 # Initialize a tokenizer
 tokenizer = CharBPETokenizer()
@@ -126,7 +126,7 @@ Here is an example showing how to build your own byte-level BPE by putting all t
 together, and then saving it to a single file:
 
 ```python
-from tokenizers import Tokenizer, models, pre_tokenizers, decoders, trainers, processors
+from tokenizers_zh import Tokenizer, models, pre_tokenizers, decoders, trainers, processors
 
 # Initialize a tokenizer
 tokenizer = Tokenizer(models.BPE())
@@ -151,7 +151,7 @@ tokenizer.save("byte-level-bpe.tokenizer.json", pretty=True)
 Now, when you want to use this tokenizer, this is as simple as:
 
 ```python
-from tokenizers import Tokenizer
+from tokenizers_zh import Tokenizer
 
 tokenizer = Tokenizer.from_file("byte-level-bpe.tokenizer.json")
 

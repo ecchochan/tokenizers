@@ -7,10 +7,10 @@ import logging
 logging.getLogger("transformers").disabled = True
 logging.getLogger("transformers.tokenization_utils").disabled = True
 
-from tokenizers import Tokenizer, pre_tokenizers, decoders
-from tokenizers.models import BPE, WordPiece
-from tokenizers.processors import BertProcessing
-from tokenizers.normalizers import BertNormalizer
+from tokenizers_zh import Tokenizer, pre_tokenizers, decoders
+from tokenizers_zh.models import BPE, WordPiece
+from tokenizers_zh.processors import BertProcessing
+from tokenizers_zh.normalizers import BertNormalizer
 
 from transformers import GPT2Tokenizer, BertTokenizer
 
